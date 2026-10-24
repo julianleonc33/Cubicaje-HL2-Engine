@@ -23,3 +23,10 @@ Nota: el motor usa **Z como eje vertical** (`z1 == 0` es el piso del contenedor)
 Abrir `Intento14.sln` en Visual Studio 2022 (toolset v143).
 - `Intento14`: ejecutable de consola (x64).
 - `CubicajeNative`: DLL Release | ARM64 (requiere las cargas de trabajo UWP y ARM64, Windows SDK 10.0.26100).
+
+### DLL precompilada
+
+`Intento14 modificado/Build/ARM64/Release/CubicajeNative.dll` está incluida en el repo, compilada desde este mismo código fuente (Release | ARM64, VS2022 v143).
+- Arquitectura: ARM64, App Container (UWP).
+- Exports: `Cubicaje_Resolver`, `Cubicaje_UltimaUtilizacion`.
+- SHA-256: `E948CEC43EC9888EAFFC6DA7A1CF83D7ED63947DF90B7BD34526469CF8DB5877`
