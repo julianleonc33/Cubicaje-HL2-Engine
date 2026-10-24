@@ -1,0 +1,18 @@
+# Artefactos de Visual Studio / compilación
+.vs/
+x64/
+x86/
+ARM64/
+Build/
+obj/
+Debug/
+Release/
+Generated Files/
+*.vcxproj.user
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.exp
