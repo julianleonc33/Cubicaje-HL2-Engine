@@ -95,6 +95,42 @@ Si se conocen las próximas cajas (un buffer), se evalúan los `CandidatosEvalua
 completando el buffer con la misma regla voraz y se elige el que deja más volumen cargado: es la misma
 idea con la que el Beam Search offline evalúa sus nodos.
 
+### Bin packing (3D-BPP): varios contenedores idénticos
+
+Hay que empacar **todas** las cajas usando el menor número de contenedores. Es una extensión
+del concepto de espacios maximales: la lista de espacios contiene espacios de **todos los
+contenedores abiertos** (cada espacio y cada caja llevan su índice de contenedor, y partir,
+contener y soportar solo relacionan elementos del mismo contenedor). Cuando para las cajas
+pendientes no existe espacio disponible en la lista, se abre un contenedor nuevo y su espacio
+completo entra a la lista.
+
+**Offline** (`BinPackingSolver`): el mismo GRASP + Beam Search del motor, con el constructivo
+abriendo contenedores y con puntaje `-N + Σ(utilización²)/N` (primero menos contenedores `N`;
+a igualdad, la solución más concentrada). Se detiene al alcanzar la cota inferior por volumen o
+al agotar el tiempo.
+
+```csharp
+ResultadoBinPacking r = BinPackingSolver.Resolver(1200, 1000, 1800, piezas, maxTiempoSeg: 5);
+r.NumContenedores; r.CotaInferior;
+foreach (ResultadoCubicaje c in r.Contenedores)      // uno por contenedor, con su Utilizacion
+    foreach (PiezaColocada p in c.Colocadas)          // p.Contenedor = índice del contenedor, p.IndicePieza global
+        ...
+r.NoColocadas;  // solo piezas que no caben en un contenedor vacío
+```
+
+**Online** (`BinPackingOnline`): cada caja que llega se ubica en el mejor espacio de la lista
+(estrategia `MejorAjuste` = contenedor más lleno donde cabe, o `PrimerAjuste` = el más antiguo;
+dentro del contenedor, la estrategia de posición del online). Si no hay espacio se abre un
+contenedor nuevo. `MaxContenedoresAbiertos` limita los abiertos (al abrir uno nuevo se cierra el
+más lleno y sus espacios salen de la lista). `Cerrar(k)` cierra uno manualmente (el pallet salió).
+
+```csharp
+var bpp = new BinPackingOnline(1200, 1000, 1800, new ParametrosBinPackingOnline {
+    Estrategia = EstrategiaBins.MejorAjuste, MaxContenedoresAbiertos = 2 });
+PiezaColocada? p = bpp.Colocar(piezaQueLlega, proximasConocidas);  // p.Contenedor dice en cuál va
+bpp.NumContenedores; bpp.NumAbiertos; bpp.UtilizacionDe(k); bpp.ColocadasDe(k); bpp.EspaciosLibres(k);
+```
+
 ## Correspondencia con el motor C++
 
 | C++ (`Intento14.cpp`) | C# |
@@ -105,6 +141,7 @@ idea con la que el Beam Search offline evalúa sus nodos.
 | `ActualizarEspacios`, `JuntarEspacios`, `DeterminarEsquina`, `BloqueSoportado`… | `EspaciosMaximales` (compartido con el online) |
 | `Bloque`, `HacerBloquesGenerales` | `Bloque`, `Instancia.HacerBloquesGenerales` |
 | `Poligono` (casco convexo) | `Geometria` (CubicajeGeometria.cs) |
+| — (no existe en C++) | `BinPackingSolver`, `BinPackingOnline` (CubicajeBinPacking.cs); `MotorOnline` (CubicajeOnline.cs) |
 
 Se tradujo la configuración que usa la app (`r_estabilidad = 1`, `r_juntarEspacios = 0`,
 `r_multidrop = 0`, `r_maxPresionItems = false`). Diferencias deliberadas:
@@ -139,7 +176,10 @@ Pruebas\compilar_y_probar.cmd [segundos para el caso 205]
 ```
 
 Busca `csc.exe` de Visual Studio / Build Tools, compila `Runtime/*.cs` + `Pruebas/PruebasCubicaje.cs`
-y ejecuta: el caso 205³, determinismo con semilla, casos borde, 8 instancias aleatorias offline, y
-la versión online con y sin lookahead sobre 20 instancias aleatorias. Un verificador independiente
-comprueba contención, no solapamiento, soporte, orientaciones permitidas y uso único de cada pieza.
+y ejecuta: el caso 205³, determinismo con semilla, casos borde, 8 instancias aleatorias offline, la
+versión online con y sin lookahead sobre 20 instancias aleatorias, y el bin packing offline (casos con
+óptimo conocido: 8, 10 y 20 cubos de 50 y 27 cubos de 33 en 100³, más aleatorios) y online (con y sin
+límite de contenedores abiertos). Un verificador independiente comprueba contención, no solapamiento,
+soporte, orientaciones permitidas, uso único de cada pieza entre contenedores y que no se use menos
+contenedores que la cota inferior.
 Con el SDK de .NET: `dotnet run -c Release --project Pruebas\PruebasCubicaje.csproj`.

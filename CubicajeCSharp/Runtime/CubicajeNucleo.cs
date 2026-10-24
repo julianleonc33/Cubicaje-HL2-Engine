@@ -168,13 +168,24 @@ namespace Cubicaje
         /// <summary>Piezas de entrada que no caben en el contenedor en ninguna orientación.</summary>
         public readonly List<int> IndicesSinCabida = new List<int>();
 
-        public Instancia(int dimX, int dimY, int dimZ, IList<PiezaEntrada> piezas, ParametrosSolver par)
+        /// <summary>
+        /// false: un solo contenedor (3D-SKP: maximizar volumen cargado).
+        /// true: bin packing (3D-BPP: todas las cajas se empacan, abriendo contenedores idénticos
+        /// cuando ninguna caja pendiente tiene espacio disponible; se minimiza el número de contenedores).
+        /// </summary>
+        public readonly bool ModoBins;
+
+        /// <summary>Cota inferior por volumen del número de contenedores (bin packing).</summary>
+        public int CotaInferior = 1;
+
+        public Instancia(int dimX, int dimY, int dimZ, IList<PiezaEntrada> piezas, ParametrosSolver par, bool modoBins)
         {
             DimX = dimX;
             DimY = dimY;
             DimZ = dimZ;
             Vol = (double)dimX * dimY * dimZ;
             Par = par;
+            ModoBins = modoBins;
             Rnd = par.Semilla.HasValue ? new Random(par.Semilla.Value) : new Random();
 
             // Piezas idénticas (mismas dimensiones y rotaciones permitidas) se agrupan en un
@@ -211,6 +222,10 @@ namespace Cubicaje
             }
 
             Cantidades0 = BoxTypes.Select(bt => bt.Cantidad).ToArray();
+
+            double volTotal = 0;
+            foreach (var bt in BoxTypes) volTotal += (double)bt.VolumenReal * bt.Cantidad;
+            CotaInferior = Math.Max(1, (int)Math.Ceiling(volTotal / Vol - 1e-9));
         }
 
         public double Rand01()
@@ -285,6 +300,7 @@ namespace Cubicaje
     {
         public int Id;
         public int IdBloque;           // bloque general del que proviene (para desarmar la solución por bloques)
+        public int Contenedor;         // contenedor en el que está ubicada (bin packing)
         public int X1, Y1, Z1, X2, Y2, Z2;
         public double Cx, Cy;          // centro geométrico de la base
         public BoxType Bt;
@@ -514,7 +530,14 @@ namespace Cubicaje
         public bool Cambio;                 // hay que recalcular IndCajas / esquina
         public List<int> IndCajas;          // índices de las cajas sobre las que se apoya el espacio (z1 > 0)
 
-        public MaximalSpace(int x1, int y1, int z1, int x2, int y2, int z2)
+        /// <summary>
+        /// Contenedor al que pertenece el espacio. Extensión para bin packing: la lista de espacios
+        /// maximales puede contener espacios de varios contenedores abiertos a la vez; todas las
+        /// operaciones (partir, contener, soporte) solo relacionan espacios y cajas del mismo contenedor.
+        /// </summary>
+        public int Contenedor;
+
+        public MaximalSpace(int x1, int y1, int z1, int x2, int y2, int z2, int contenedor)
         {
             X1 = x1; Y1 = y1; Z1 = z1;
             X2 = x2; Y2 = y2; Z2 = z2;
@@ -525,12 +548,13 @@ namespace Cubicaje
             Cambio = true;
             IndEsquina = -1;
             Metrica = 0;
+            Contenedor = contenedor;
         }
 
         /// <summary>Espacio igual a todo el contenedor (constructor por defecto del C++).</summary>
-        public static MaximalSpace Completo(int dimX, int dimY, int dimZ)
+        public static MaximalSpace Completo(int dimX, int dimY, int dimZ, int contenedor)
         {
-            var e = new MaximalSpace(0, 0, 0, dimX, dimY, dimZ);
+            var e = new MaximalSpace(0, 0, 0, dimX, dimY, dimZ, contenedor);
             e.IndEsquina = 1;
             e.Cambio = false;
             return e;
@@ -550,12 +574,12 @@ namespace Cubicaje
 
         public bool Intersecta(BloqueEmpacado c)
         {
-            return !(X1 >= c.X2 || Y1 >= c.Y2 || Z1 >= c.Z2 || c.X1 >= X2 || c.Y1 >= Y2 || c.Z1 >= Z2);
+            return Contenedor == c.Contenedor && !(X1 >= c.X2 || Y1 >= c.Y2 || Z1 >= c.Z2 || c.X1 >= X2 || c.Y1 >= Y2 || c.Z1 >= Z2);
         }
 
         public bool Contiene(MaximalSpace o)
         {
-            return Z1 <= o.Z1 && o.Z2 <= Z2 && Y1 <= o.Y1 && o.Y2 <= Y2 && X1 <= o.X1 && o.X2 <= X2;
+            return Contenedor == o.Contenedor && Z1 <= o.Z1 && o.Z2 <= Z2 && Y1 <= o.Y1 && o.Y2 <= Y2 && X1 <= o.X1 && o.X2 <= X2;
         }
     }
 
@@ -569,10 +593,12 @@ namespace Cubicaje
         public Bloque B;                 // null para los bloques ficticios
         public int X1, Y1, Z1, X2, Y2, Z2;
         public int Bf1, Bf2, Bf3;        // métricas best-fit
+        public int Contenedor;           // contenedor del espacio donde se ubica
 
         public BloqueEmpacado(Bloque b, MaximalSpace e)
         {
             B = b;
+            Contenedor = e.Contenedor;
             switch (e.IndEsquina)
             {
                 case 2: X1 = e.X1; Y1 = e.Y2 - b.Dy; break;          // -x, +y
@@ -592,11 +618,12 @@ namespace Cubicaje
         }
 
         /// <summary>Bloque ficticio (solo coordenadas) para reconstruir los espacios maximales al retirar piezas.</summary>
-        public BloqueEmpacado(int x1, int y1, int z1, int x2, int y2, int z2)
+        public BloqueEmpacado(int x1, int y1, int z1, int x2, int y2, int z2, int contenedor)
         {
             B = null;
             X1 = x1; Y1 = y1; Z1 = z1;
             X2 = x2; Y2 = y2; Z2 = z2;
+            Contenedor = contenedor;
         }
 
         /// <summary>Orden_BestFit_MaxVol del C++.</summary>
@@ -640,27 +667,28 @@ namespace Cubicaje
             for (int i = le.Count - 1; i >= 0; --i)
             {
                 var e = le[i];
-                if (!e.Intersecta(c)) continue;
+                if (!e.Intersecta(c)) continue; // solo espacios del mismo contenedor que se solapan con el bloque
+                int k = e.Contenedor;
 
                 // en x
-                if (c.X1 > e.X1) nuevos.Add(new MaximalSpace(e.X1, e.Y1, e.Z1, c.X1, e.Y2, e.Z2));
-                if (e.X2 > c.X2) nuevos.Add(new MaximalSpace(c.X2, e.Y1, e.Z1, e.X2, e.Y2, e.Z2));
+                if (c.X1 > e.X1) nuevos.Add(new MaximalSpace(e.X1, e.Y1, e.Z1, c.X1, e.Y2, e.Z2, k));
+                if (e.X2 > c.X2) nuevos.Add(new MaximalSpace(c.X2, e.Y1, e.Z1, e.X2, e.Y2, e.Z2, k));
                 // en y
-                if (c.Y1 > e.Y1) nuevos.Add(new MaximalSpace(e.X1, e.Y1, e.Z1, e.X2, c.Y1, e.Z2));
-                if (e.Y2 > c.Y2) nuevos.Add(new MaximalSpace(e.X1, c.Y2, e.Z1, e.X2, e.Y2, e.Z2));
+                if (c.Y1 > e.Y1) nuevos.Add(new MaximalSpace(e.X1, e.Y1, e.Z1, e.X2, c.Y1, e.Z2, k));
+                if (e.Y2 > c.Y2) nuevos.Add(new MaximalSpace(e.X1, c.Y2, e.Z1, e.X2, e.Y2, e.Z2, k));
                 // en z
-                if (c.Z1 > e.Z1) nuevos.Add(new MaximalSpace(e.X1, e.Y1, e.Z1, e.X2, e.Y2, c.Z1));
+                if (c.Z1 > e.Z1) nuevos.Add(new MaximalSpace(e.X1, e.Y1, e.Z1, e.X2, e.Y2, c.Z1, k));
                 if (e.Z2 > c.Z2)
                 {
                     if (topCompleto)
                     {
-                        nuevos.Add(new MaximalSpace(e.X1, e.Y1, c.Z2, e.X2, e.Y2, e.Z2));
+                        nuevos.Add(new MaximalSpace(e.X1, e.Y1, c.Z2, e.X2, e.Y2, e.Z2, k));
                     }
                     else
                     {
                         int ax1 = Math.Max(c.X1, e.X1), ay1 = Math.Max(c.Y1, e.Y1);
                         int ax2 = Math.Min(c.X2, e.X2), ay2 = Math.Min(c.Y2, e.Y2);
-                        if (ax2 > ax1 && ay2 > ay1) nuevos.Add(new MaximalSpace(ax1, ay1, c.Z2, ax2, ay2, e.Z2));
+                        if (ax2 > ax1 && ay2 > ay1) nuevos.Add(new MaximalSpace(ax1, ay1, c.Z2, ax2, ay2, e.Z2, k));
                     }
                 }
                 le.RemoveAt(i);
@@ -682,7 +710,7 @@ namespace Cubicaje
                 for (int k = 0; k < empacados.Count; ++k)
                 {
                     var p = empacados[k];
-                    if (e.Z2 == p.Z1 && p.SolapaXY(e.X1, e.Y1, e.X2, e.Y2))
+                    if (p.Contenedor == e.Contenedor && e.Z2 == p.Z1 && p.SolapaXY(e.X1, e.Y1, e.X2, e.Y2))
                     {
                         e.Dz -= 1;
                         e.Z2 -= 1;
@@ -728,7 +756,7 @@ namespace Cubicaje
                 for (int k = 0; k < empacados.Count; ++k)
                 {
                     var p = empacados[k];
-                    if (p.Z2 == e.Z1 && p.SolapaXY(e.X1, e.Y1, e.X2, e.Y2)) e.IndCajas.Add(p.Id);
+                    if (p.Contenedor == e.Contenedor && p.Z2 == e.Z1 && p.SolapaXY(e.X1, e.Y1, e.X2, e.Y2)) e.IndCajas.Add(p.Id);
                 }
             }
             DeterminarEsquina(e, empacados, contDimX, contDimY);
@@ -899,20 +927,30 @@ namespace Cubicaje
         public List<MaximalSpace> Espacios;       // espacios para el constructivo GRASP y el beam (soporte parcial)
         public List<MaximalSpace> EspaciosFast;   // espacios para el constructivo rápido de evaluación
         public int[] CantidadesBoxType;
-        public double Utilizacion, UtilizacionBW;
+        public double Utilizacion;                // volumen empacado / volumen de UN contenedor (puede superar 1 en bin packing)
+        public double PuntajeBW;                  // puntaje de la evaluación del nodo en el beam search
         public long VolEmpacado;
         public List<Bloque> Bloques;              // bloques que todavía se pueden usar
         public readonly List<BloqueEmpacado> Opciones = new List<BloqueEmpacado>();
         public List<PackedBox> Empacados;
         public bool HayCajasPorEmpacar;
 
+        /// <summary>Contenedores abiertos (1 en el problema de un solo contenedor).</summary>
+        public int NumContenedores;
+
+        /// <summary>Volumen empacado en cada contenedor.</summary>
+        public List<long> VolPorContenedor;
+
         public Container(Instancia inst)
         {
             I = inst;
             CantidadesBoxType = (int[])inst.Cantidades0.Clone();
             ActualizarMinD();
-            Espacios = new List<MaximalSpace> { MaximalSpace.Completo(I.DimX, I.DimY, I.DimZ) };
-            EspaciosFast = new List<MaximalSpace> { MaximalSpace.Completo(I.DimX, I.DimY, I.DimZ) };
+            Espacios = new List<MaximalSpace>();
+            EspaciosFast = new List<MaximalSpace>();
+            VolPorContenedor = new List<long>();
+            NumContenedores = 0;
+            AbrirContenedor();
             Utilizacion = 0;
             Bloques = new List<Bloque>(inst.Bloques);
             Empacados = new List<PackedBox>();
@@ -926,6 +964,8 @@ namespace Cubicaje
             Alpha = c.Alpha;
             Utilizacion = c.Utilizacion;
             HayCajasPorEmpacar = c.HayCajasPorEmpacar;
+            NumContenedores = c.NumContenedores;
+            VolPorContenedor = new List<long>(c.VolPorContenedor);
             CantidadesBoxType = (int[])c.CantidadesBoxType.Clone();
             Empacados = new List<PackedBox>(c.Empacados.Count);
             foreach (var p in c.Empacados) Empacados.Add(p.Clone());
@@ -949,6 +989,46 @@ namespace Cubicaje
                 VolEmpacado = 0;
                 foreach (var p in Empacados) VolEmpacado += p.Bt.VolumenReal;
             }
+        }
+
+        // ---- contenedores (bin packing) ---------------------------------------------------
+
+        /// <summary>Abre un contenedor nuevo: su espacio completo entra a las dos listas de espacios maximales.</summary>
+        public void AbrirContenedor()
+        {
+            int k = NumContenedores++;
+            VolPorContenedor.Add(0);
+            Espacios.Add(MaximalSpace.Completo(I.DimX, I.DimY, I.DimZ, k));
+            EspaciosFast.Add(MaximalSpace.Completo(I.DimX, I.DimY, I.DimZ, k));
+        }
+
+        /// <summary>
+        /// Valor de la solución (mayor es mejor).
+        ///  - Un contenedor: utilización (volumen cargado).
+        ///  - Bin packing: -NumContenedores + (suma de utilizaciones al cuadrado) / NumContenedores.
+        ///    El segundo término está en (0, 1], así que primero manda el número de contenedores y, a
+        ///    igualdad, se prefiere la solución más concentrada (contenedores llenos y uno casi vacío),
+        ///    que es la que más fácilmente permite eliminar un contenedor.
+        /// </summary>
+        public double Puntaje
+        {
+            get
+            {
+                if (!I.ModoBins) return Utilizacion;
+                double sumSq = 0;
+                foreach (long v in VolPorContenedor)
+                {
+                    double u = v / I.Vol;
+                    sumSq += u * u;
+                }
+                return -NumContenedores + sumSq / Math.Max(1, NumContenedores);
+            }
+        }
+
+        /// <summary>true cuando ya no tiene sentido seguir buscando: todo empacado (un contenedor) o se alcanzó la cota inferior (bin packing).</summary>
+        public bool Terminado
+        {
+            get { return I.ModoBins ? (!HayCajasPorEmpacar && NumContenedores <= I.CotaInferior) : !HayCajasPorEmpacar; }
         }
 
         // ---- utilidades internas -------------------------------------------------------
@@ -984,6 +1064,8 @@ namespace Cubicaje
 
         // ---- selección de espacios maximales -----------------------------------------------
 
+        // Con varios contenedores abiertos, primero se llenan los de menor índice.
+
         /// <summary>Menor x1, luego mayor z1 (fondo del contenedor, de arriba hacia abajo).</summary>
         public static int SeleccionarEspacio_Fondo_Altura(List<MaximalSpace> le)
         {
@@ -992,7 +1074,8 @@ namespace Cubicaje
             {
                 var e = le[i];
                 var m = le[mejor];
-                if (e.X1 < m.X1) mejor = i;
+                if (e.Contenedor != m.Contenedor) { if (e.Contenedor < m.Contenedor) mejor = i; }
+                else if (e.X1 < m.X1) mejor = i;
                 else if (e.X1 == m.X1)
                 {
                     if (e.Z1 > m.Z1) mejor = i;
@@ -1010,7 +1093,8 @@ namespace Cubicaje
             {
                 var e = le[i];
                 var m = le[mejor];
-                if (e.X1 < m.X1) mejor = i;
+                if (e.Contenedor != m.Contenedor) { if (e.Contenedor < m.Contenedor) mejor = i; }
+                else if (e.X1 < m.X1) mejor = i;
                 else if (e.X1 == m.X1)
                 {
                     if (e.Z1 < m.Z1) mejor = i;
@@ -1028,7 +1112,8 @@ namespace Cubicaje
             {
                 var e = le[i];
                 var m = le[mejor];
-                if (e.Z1 > m.Z1) mejor = i;
+                if (e.Contenedor != m.Contenedor) { if (e.Contenedor < m.Contenedor) mejor = i; }
+                else if (e.Z1 > m.Z1) mejor = i;
                 else if (e.Z1 == m.Z1)
                 {
                     if (e.X1 < m.X1) mejor = i;
@@ -1161,16 +1246,29 @@ namespace Cubicaje
             }
 
             // Se empacan las cajas del bloque
+            VolPorContenedor[b.Contenedor] += b.B.VolOcupado;
             int nCajas = Empacados.Count;
             int idBloque = nCajas > 0 ? Empacados[nCajas - 1].IdBloque + 1 : 0;
             foreach (var p0 in b.B.Cajas)
             {
                 var p = p0.Clone();
                 p.IdBloque = idBloque;
+                p.Contenedor = b.Contenedor;
                 p.Id += nCajas;
                 p.Desplazar(b.X1, b.Y1, b.Z1);
                 Empacados.Add(p);
             }
+        }
+
+        /// <summary>
+        /// Bin packing: cuando la lista de espacios está vacía y quedan cajas, ninguna caja pendiente
+        /// tiene espacio disponible en los contenedores abiertos, así que se abre uno nuevo.
+        /// Devuelve true si la lista quedó con espacios.
+        /// </summary>
+        bool AsegurarEspacios(List<MaximalSpace> le)
+        {
+            if (le.Count == 0 && HayCajasPorEmpacar && I.ModoBins) AbrirContenedor();
+            return le.Count > 0;
         }
 
         void ActualizarListaEspacios(List<MaximalSpace> le, BloqueEmpacado b, bool topCompleto)
@@ -1203,7 +1301,7 @@ namespace Cubicaje
         /// <summary>Constructivo GRASP aleatorizado (selección de espacio y de bloque con alpha).</summary>
         public void Constructivo()
         {
-            while (Espacios.Count > 0 && HayCajasPorEmpacar)
+            while (HayCajasPorEmpacar && AsegurarEspacios(Espacios))
             {
                 int iE = I.Rand01() < 0.5 ? SeleccionarEspacio_Fondo_Altura(Espacios) : SeleccionarEspacio_Altura_Fondo(Espacios);
                 var e = Espacios[iE];
@@ -1222,7 +1320,7 @@ namespace Cubicaje
         /// <summary>Constructivo rápido y determinístico (evaluación de los nodos del beam).</summary>
         public void ConstructivoFast()
         {
-            while (EspaciosFast.Count > 0 && HayCajasPorEmpacar)
+            while (HayCajasPorEmpacar && AsegurarEspacios(EspaciosFast))
             {
                 int iE = SeleccionarEspacio_Fondo_Altura(EspaciosFast);
                 var e = EspaciosFast[iE];
@@ -1253,18 +1351,27 @@ namespace Cubicaje
                 if (CantidadesBoxType[i] > 0) HayCajasPorEmpacar = true;
             }
 
-            // Espacios maximales: se parte de todo el contenedor y se "empaca" un bloque ficticio por cada bloque ya ubicado
-            Espacios = new List<MaximalSpace> { MaximalSpace.Completo(I.DimX, I.DimY, I.DimZ) };
-            EspaciosFast = new List<MaximalSpace> { MaximalSpace.Completo(I.DimX, I.DimY, I.DimZ) };
+            // Contenedores: se conservan los que todavía tienen cajas (las cajas se empacan en orden de contenedor)
+            Espacios = new List<MaximalSpace>();
+            EspaciosFast = new List<MaximalSpace>();
+            VolPorContenedor = new List<long>();
+            NumContenedores = 0;
+            int maxCont = 0;
+            foreach (var p in Empacados) if (p.Contenedor > maxCont) maxCont = p.Contenedor;
+            while (NumContenedores <= maxCont) AbrirContenedor();
+            foreach (var p in Empacados) VolPorContenedor[p.Contenedor] += p.Bt.VolumenReal;
+
+            // Espacios maximales: se parte de cada contenedor completo y se "empaca" un bloque ficticio por cada bloque ya ubicado
             if (Empacados.Count > 0)
             {
                 var p0 = Empacados[0];
                 int x1 = p0.X1, y1 = p0.Y1, z1 = p0.Z1, x2 = p0.X2, y2 = p0.Y2, z2 = p0.Z2;
                 int idBloque = p0.IdBloque;
+                int cont = p0.Contenedor;
                 for (int k = 1; k < Empacados.Count; ++k)
                 {
                     var p = Empacados[k];
-                    if (p.IdBloque == idBloque)
+                    if (p.IdBloque == idBloque && p.Contenedor == cont)
                     {
                         if (x1 > p.X1) x1 = p.X1;
                         if (y1 > p.Y1) y1 = p.Y1;
@@ -1275,13 +1382,14 @@ namespace Cubicaje
                     }
                     else
                     {
-                        EmpacarFicticio(x1, y1, z1, x2, y2, z2);
+                        EmpacarFicticio(x1, y1, z1, x2, y2, z2, cont);
                         x1 = p.X1; y1 = p.Y1; z1 = p.Z1;
                         x2 = p.X2; y2 = p.Y2; z2 = p.Z2;
                         idBloque = p.IdBloque;
+                        cont = p.Contenedor;
                     }
                 }
-                EmpacarFicticio(x1, y1, z1, x2, y2, z2);
+                EmpacarFicticio(x1, y1, z1, x2, y2, z2, cont);
             }
             EspaciosMaximales.EliminarMinD(Espacios, MinDx, MinDy, MinDz);
             EspaciosMaximales.ActualizarIndicesCajas(Espacios, Empacados, I.DimX, I.DimY);
@@ -1293,9 +1401,9 @@ namespace Cubicaje
             EliminarBloques();
         }
 
-        void EmpacarFicticio(int x1, int y1, int z1, int x2, int y2, int z2)
+        void EmpacarFicticio(int x1, int y1, int z1, int x2, int y2, int z2, int contenedor)
         {
-            var ficticio = new BloqueEmpacado(x1, y1, z1, x2, y2, z2);
+            var ficticio = new BloqueEmpacado(x1, y1, z1, x2, y2, z2, contenedor);
             EspaciosMaximales.Actualizar(Espacios, ficticio, true);
             EspaciosMaximales.Juntar(Espacios, Empacados, I.DimZ);
             EspaciosMaximales.Actualizar(EspaciosFast, ficticio, false);
@@ -1312,7 +1420,17 @@ namespace Cubicaje
         public List<Container> ObtenerOpcionesBeam()
         {
             var resp = new List<Container>();
-            if (Espacios.Count == 0) return resp;
+            // Bin packing: si ninguna caja pendiente tiene espacio en los contenedores abiertos, se abre uno nuevo
+            // (como mucho una vez: en un contenedor vacío siempre cabe algún bloque).
+            for (int intento = 0; intento < 2 && resp.Count == 0 && HayCajasPorEmpacar && AsegurarEspacios(Espacios); ++intento)
+            {
+                ExpandirNodo(resp);
+            }
+            return resp;
+        }
+
+        void ExpandirNodo(List<Container> resp)
+        {
             var esp = new List<MaximalSpace>();
 
             // Primer espacio
@@ -1353,7 +1471,6 @@ namespace Cubicaje
                 agregados = ExpandirEspacio(e, resp);
                 if (agregados == 0) Espacios.RemoveAt(iE);
             }
-            return resp;
         }
 
         int ExpandirEspacio(MaximalSpace e, List<Container> resp)

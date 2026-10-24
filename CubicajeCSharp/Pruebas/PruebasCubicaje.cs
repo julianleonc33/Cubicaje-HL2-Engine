@@ -247,6 +247,115 @@ static class PruebasCubicaje
         Console.WriteLine("  utilización media sin lookahead " + (100 * suma / casos).ToString("F1") + "%, con lookahead 4: " + (100 * sumaLa / casos).ToString("F1") + "%  (" + sw.Elapsed.TotalSeconds.ToString("F2") + "s en total)");
     }
 
+    // ---- bin packing --------------------------------------------------------------------------
+
+    static void VerificarBins(string nombre, int cx, int cy, int cz, IList<PiezaEntrada> piezas, List<List<PiezaColocada>> bins, List<int> noColocadas)
+    {
+        var usadas = new HashSet<int>();
+        for (int c = 0; c < bins.Count; ++c)
+        {
+            Verificar(nombre + "[bin " + c + "]", cx, cy, cz, piezas, bins[c]);
+            Check(bins[c].Count > 0, nombre + ": contenedor " + c + " vacío");
+            foreach (var p in bins[c])
+            {
+                Check(p.Contenedor == c, nombre + ": campo Contenedor incorrecto en " + p);
+                Check(usadas.Add(p.IndicePieza), nombre + ": pieza " + p.IndicePieza + " repetida entre contenedores");
+            }
+        }
+        foreach (int i in noColocadas) Check(usadas.Add(i), nombre + ": pieza no colocada " + i + " también aparece colocada");
+        Check(usadas.Count == piezas.Count, nombre + ": colocadas + no colocadas (" + usadas.Count + ") != total (" + piezas.Count + ")");
+    }
+
+    static List<PiezaEntrada> Cubos(int n, int lado)
+    {
+        var l = new List<PiezaEntrada>();
+        for (int i = 0; i < n; ++i) l.Add(new PiezaEntrada("C" + i, lado, lado, lado));
+        return l;
+    }
+
+    static void PruebaBinPackingOffline()
+    {
+        Console.WriteLine("== Bin packing offline ==");
+
+        // 8 cubos de 50 en 100^3 -> 1 contenedor exacto; 10 cubos -> 2; 27 cubos de 33 -> 1
+        var casos = new[] {
+            new { nombre = "8 cubos de 50", piezas = Cubos(8, 50), esperado = 1 },
+            new { nombre = "10 cubos de 50", piezas = Cubos(10, 50), esperado = 2 },
+            new { nombre = "27 cubos de 33", piezas = Cubos(27, 33), esperado = 1 },
+            new { nombre = "20 cubos de 50", piezas = Cubos(20, 50), esperado = 3 },
+        };
+        foreach (var caso in casos)
+        {
+            var r = BinPackingSolver.Resolver(100, 100, 100, caso.piezas, 2, new ParametrosSolver { Semilla = 1 });
+            VerificarBins("bpp " + caso.nombre, 100, 100, 100, caso.piezas, r.Contenedores.Select(c => c.Colocadas).ToList(), r.NoColocadas);
+            Check(r.NumContenedores >= r.CotaInferior, "bpp " + caso.nombre + ": menos contenedores que la cota inferior");
+            Check(r.NumContenedores == caso.esperado, "bpp " + caso.nombre + ": se esperaban " + caso.esperado + " contenedores, hubo " + r.NumContenedores);
+            Console.WriteLine("  " + caso.nombre + ": " + r.NumContenedores + " contenedores (cota " + r.CotaInferior + "), ut=" + string.Join("/", r.Contenedores.Select(c => (c.Utilizacion * 100).ToString("F0"))) + "%  dur=" + r.DuracionSeg.ToString("F2") + "s");
+        }
+
+        // Piezas que no caben en ningún contenedor
+        var mixto = Cubos(3, 50); mixto.Add(new PiezaEntrada("G", 150, 10, 10));
+        var rm = BinPackingSolver.Resolver(100, 100, 100, mixto, 0.5, new ParametrosSolver { Semilla = 1 });
+        Check(rm.NoColocadas.Count == 1 && rm.NoColocadas[0] == 3 && rm.NumContenedores == 1, "bpp: pieza gigante debe quedar en NoColocadas");
+
+        // Aleatorios
+        var rnd = new Random(77);
+        int sumaBins = 0, sumaCota = 0;
+        for (int c = 0; c < 6; ++c)
+        {
+            int cx = rnd.Next(200, 800), cy = rnd.Next(200, 800), cz = rnd.Next(200, 800);
+            var piezas = PiezasAleatorias(rnd, rnd.Next(20, 60), cx, cy, cz);
+            var r = BinPackingSolver.Resolver(cx, cy, cz, piezas, 2, new ParametrosSolver { Semilla = c });
+            VerificarBins("bpp rnd" + c, cx, cy, cz, piezas, r.Contenedores.Select(x => x.Colocadas).ToList(), r.NoColocadas);
+            Check(r.NumContenedores >= r.CotaInferior, "bpp rnd" + c + ": menos contenedores que la cota inferior");
+            sumaBins += r.NumContenedores; sumaCota += r.CotaInferior;
+            Console.WriteLine("  rnd" + c + ": piezas=" + piezas.Count + " contenedores=" + r.NumContenedores + " cota=" + r.CotaInferior + " iter=" + r.Iteraciones + " dur=" + r.DuracionSeg.ToString("F2") + "s");
+        }
+        Console.WriteLine("  total contenedores " + sumaBins + " vs cota " + sumaCota);
+    }
+
+    static void PruebaBinPackingOnline()
+    {
+        Console.WriteLine("== Bin packing online ==");
+        var rnd = new Random(31);
+        int sumaBins = 0, sumaBinsPA = 0, sumaCota = 0;
+        for (int c = 0; c < 10; ++c)
+        {
+            int cx = rnd.Next(200, 800), cy = rnd.Next(200, 800), cz = rnd.Next(200, 800);
+            var piezas = PiezasAleatorias(rnd, rnd.Next(20, 80), cx, cy, cz);
+            int maxAbiertos = c % 2 == 0 ? 0 : 2;
+
+            var on = new BinPackingOnline(cx, cy, cz, new ParametrosBinPackingOnline { MaxContenedoresAbiertos = maxAbiertos });
+            for (int i = 0; i < piezas.Count; ++i)
+            {
+                on.Colocar(piezas[i], piezas.Skip(i + 1).Take(3).ToList());
+                if (maxAbiertos > 0) Check(on.NumAbiertos <= maxAbiertos, "bpp online: más contenedores abiertos que el máximo");
+            }
+            var bins = new List<List<PiezaColocada>>();
+            for (int b = 0; b < on.NumContenedores; ++b) bins.Add(on.Colocadas.Where(p => p.Contenedor == b).ToList());
+            VerificarBins("bpp online rnd" + c, cx, cy, cz, piezas, bins, new List<int>());
+            for (int b = 0; b < on.NumContenedores; ++b)
+                Check(on.ColocadasDe(b).Select(p => p.IndicePieza).SequenceEqual(bins[b].Select(p => p.IndicePieza)), "bpp online: índices del contenedor " + b + " no coinciden");
+
+            var pa = new BinPackingOnline(cx, cy, cz, new ParametrosBinPackingOnline { Estrategia = EstrategiaBins.PrimerAjuste });
+            foreach (var p in piezas) pa.Colocar(p);
+            var binsPA = new List<List<PiezaColocada>>();
+            for (int b = 0; b < pa.NumContenedores; ++b) binsPA.Add(pa.Colocadas.Where(p => p.Contenedor == b).ToList());
+            VerificarBins("bpp online PA rnd" + c, cx, cy, cz, piezas, binsPA, new List<int>());
+
+            int cota = (int)Math.Ceiling(piezas.Sum(p => (double)p.Volumen) / ((double)cx * cy * cz) - 1e-9);
+            sumaBins += on.NumContenedores; sumaBinsPA += pa.NumContenedores; sumaCota += cota;
+        }
+        Console.WriteLine("  mejor ajuste + lookahead 3: " + sumaBins + " contenedores; primer ajuste: " + sumaBinsPA + "; cota " + sumaCota);
+
+        var vacio = new BinPackingOnline(100, 100, 100);
+        Check(vacio.Colocar(new PiezaEntrada("G", 500, 1, 1)) == null && vacio.NumContenedores == 0 && vacio.PiezasRechazadas == 1, "bpp online: pieza gigante rechazada sin abrir contenedor");
+        foreach (var p in Cubos(9, 50)) Check(vacio.Colocar(p) != null, "bpp online: cubo debe colocarse");
+        Check(vacio.NumContenedores == 2, "bpp online: 9 cubos de 50 deben usar 2 contenedores, usaron " + vacio.NumContenedores);
+        vacio.Cerrar(1);
+        Check(vacio.Colocar(Cubos(1, 50)[0]).Value.Contenedor == 2, "bpp online: tras cerrar el único contenedor con espacio debe abrirse otro");
+    }
+
     static int Main(string[] args)
     {
         double t205 = args.Length > 0 ? double.Parse(args[0], System.Globalization.CultureInfo.InvariantCulture) : 3;
@@ -256,6 +365,8 @@ static class PruebasCubicaje
         PruebaAleatoriasOffline(8, 0.5);
         PruebaOnline();
         PruebaOnlineAleatoria(20);
+        PruebaBinPackingOffline();
+        PruebaBinPackingOnline();
 
         Console.WriteLine();
         Console.WriteLine(fallos == 0 ? "TODAS LAS PRUEBAS PASARON" : "FALLOS: " + fallos);

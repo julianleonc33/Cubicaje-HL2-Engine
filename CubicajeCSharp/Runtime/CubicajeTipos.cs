@@ -64,6 +64,9 @@ namespace Cubicaje
     {
         public int IndicePieza;
         public string Id;
+
+        /// <summary>Índice del contenedor (0 en el problema de un solo contenedor; en bin packing, el contenedor asignado).</summary>
+        public int Contenedor;
         public int X1, Y1, Z1;
         public int X2, Y2, Z2;
 

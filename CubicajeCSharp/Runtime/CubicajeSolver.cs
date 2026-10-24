@@ -1,17 +1,21 @@
 // =====================================================================================
 //  Solver OFFLINE: GRASP + Beam Search (Ciclo_BS del motor C++).
 //
-//  Problema: un solo contenedor, un conjunto conocido de cajas (3D-SKP / 3D-SLOPP),
+//  Problema base: un solo contenedor, un conjunto conocido de cajas (3D-SKP / 3D-SLOPP),
 //  maximizar el volumen cargado con estabilidad parcial.
 //
 //  Esquema (idéntico al C++):
 //    1. Una iteración por cada alpha (0.1 .. 1.0); luego alphas elegidos por un muestreo
-//       reactivo (los que han dado mejor utilización se escogen más).
+//       reactivo (los que han dado mejor resultado se escogen más).
 //    2. Cada iteración: constructivo GRASP -> si mejora la incumbente o su "métrica"
 //       (volumen / área de piso) es competitiva, se desarma parcialmente la solución y se
 //       completa con Beam Search; cada nodo del haz se evalúa terminándolo con el
 //       constructivo rápido.
-//    3. Termina al agotar el tiempo o al empacar todas las cajas.
+//    3. Termina al agotar el tiempo o al llegar a una solución que no se puede mejorar.
+//
+//  El mismo ciclo resuelve el bin packing (Instancia.ModoBins): el Container maneja la lista de
+//  espacios maximales de varios contenedores y el puntaje pasa a ser el número de contenedores.
+//  Ver BinPackingSolver en CubicajeBinPacking.cs.
 // =====================================================================================
 using System;
 using System.Collections.Generic;
@@ -24,7 +28,7 @@ namespace Cubicaje
     public static class CubicajeSolver
     {
         /// <summary>
-        /// Resuelve el cubicaje. Equivale a Cubicaje_Resolver de la DLL.
+        /// Resuelve el cubicaje de un contenedor. Equivale a Cubicaje_Resolver de la DLL.
         /// </summary>
         /// <param name="contDimX">Ancho del contenedor (X).</param>
         /// <param name="contDimY">Fondo del contenedor (Y).</param>
@@ -38,6 +42,40 @@ namespace Cubicaje
             ParametrosSolver parametros = null,
             CancellationToken cancelacion = default(CancellationToken))
         {
+            var par = MotorCubicaje.ValidarEntrada(contDimX, contDimY, contDimZ, piezas, maxTiempoSeg, parametros);
+            var sw = Stopwatch.StartNew();
+            var res = new ResultadoCubicaje { ContDimX = contDimX, ContDimY = contDimY, ContDimZ = contDimZ };
+            if (piezas.Count == 0)
+            {
+                res.DuracionSeg = sw.Elapsed.TotalSeconds;
+                return res;
+            }
+
+            var inst = new Instancia(contDimX, contDimY, contDimZ, piezas, par, false);
+            if (inst.BoxTypes.Count == 0)
+            {
+                for (int i = 0; i < piezas.Count; ++i) res.NoColocadas.Add(i);
+                res.DuracionSeg = sw.Elapsed.TotalSeconds;
+                return res;
+            }
+
+            int iter, iterLS;
+            Container inc = MotorCubicaje.Ejecutar(inst, maxTiempoSeg, sw, cancelacion, out iter, out iterLS);
+
+            res.Colocadas = MotorCubicaje.MapearColocadas(inst, piezas, inc, res.NoColocadas);
+            res.Utilizacion = inc.Utilizacion;
+            res.Iteraciones = iter;
+            res.IteracionesBusquedaLocal = iterLS;
+            res.DuracionSeg = sw.Elapsed.TotalSeconds;
+            return res;
+        }
+    }
+
+    /// <summary>Piezas comunes a los dos solvers offline (un contenedor y bin packing).</summary>
+    internal static class MotorCubicaje
+    {
+        public static ParametrosSolver ValidarEntrada(int contDimX, int contDimY, int contDimZ, IList<PiezaEntrada> piezas, double maxTiempoSeg, ParametrosSolver parametros)
+        {
             if (contDimX <= 0 || contDimY <= 0 || contDimZ <= 0) throw new ArgumentException("Dimensiones del contenedor inválidas.");
             if (piezas == null) throw new ArgumentNullException("piezas");
             if (maxTiempoSeg < 0) throw new ArgumentException("El tiempo máximo no puede ser negativo.");
@@ -49,28 +87,23 @@ namespace Cubicaje
             var par = parametros ?? new ParametrosSolver();
             if (par.BeamWidth < 1) throw new ArgumentException("BeamWidth debe ser >= 1.");
             if (par.MaxNBloques < 1) throw new ArgumentException("MaxNBloques debe ser >= 1.");
+            return par;
+        }
 
-            var sw = Stopwatch.StartNew();
-            var res = new ResultadoCubicaje { ContDimX = contDimX, ContDimY = contDimY, ContDimZ = contDimZ };
-            if (piezas.Count == 0)
-            {
-                res.DuracionSeg = sw.Elapsed.TotalSeconds;
-                return res;
-            }
+        public static Container Ejecutar(Instancia inst, double maxTiempoSeg, Stopwatch sw, CancellationToken ct, out int iter, out int iterLS)
+        {
+            inst.HacerBloquesGenerales(ct);
+            var ciclo = new CicloBS(inst, maxTiempoSeg, sw, ct);
+            var inc = ciclo.Ejecutar();
+            iter = ciclo.TotalIter;
+            iterLS = ciclo.TotalIterLS;
+            return inc;
+        }
 
-            var inst = new Instancia(contDimX, contDimY, contDimZ, piezas, par);
-            if (inst.BoxTypes.Count == 0)
-            {
-                for (int i = 0; i < piezas.Count; ++i) res.NoColocadas.Add(i);
-                res.DuracionSeg = sw.Elapsed.TotalSeconds;
-                return res;
-            }
-            inst.HacerBloquesGenerales(cancelacion);
-
-            var ciclo = new CicloBS(inst, maxTiempoSeg, sw, cancelacion);
-            Container inc = ciclo.Ejecutar();
-
-            // Armar el resultado: cada caja empacada se asigna a una pieza de entrada de su tipo
+        /// <summary>Convierte las cajas empacadas en PiezaColocada: cada caja se asigna a una pieza de entrada de su tipo.</summary>
+        public static List<PiezaColocada> MapearColocadas(Instancia inst, IList<PiezaEntrada> piezas, Container inc, List<int> noColocadas)
+        {
+            var colocadas = new List<PiezaColocada>(inc.Empacados.Count);
             var cursores = new int[inst.BoxTypes.Count];
             var usada = new bool[piezas.Count];
             foreach (var p in inc.Empacados)
@@ -78,23 +111,20 @@ namespace Cubicaje
                 var bt = p.Bt;
                 int idx = bt.IndicesEntrada[cursores[bt.Id]++];
                 usada[idx] = true;
-                res.Colocadas.Add(new PiezaColocada
+                colocadas.Add(new PiezaColocada
                 {
                     IndicePieza = idx,
                     Id = piezas[idx].Id,
+                    Contenedor = p.Contenedor,
                     X1 = p.X1, Y1 = p.Y1, Z1 = p.Z1,
                     X2 = p.X2, Y2 = p.Y2, Z2 = p.Z2
                 });
             }
             for (int i = 0; i < piezas.Count; ++i)
             {
-                if (!usada[i]) res.NoColocadas.Add(i);
+                if (!usada[i]) noColocadas.Add(i);
             }
-            res.Utilizacion = inc.Utilizacion;
-            res.Iteraciones = ciclo.TotalIter;
-            res.IteracionesBusquedaLocal = ciclo.TotalIterLS;
-            res.DuracionSeg = sw.Elapsed.TotalSeconds;
-            return res;
+            return colocadas;
         }
     }
 
@@ -168,13 +198,13 @@ namespace Cubicaje
 
             // Adquisición de datos iniciales: una iteración por alpha.
             // (Se garantiza al menos una iteración aunque el tiempo sea 0.)
-            for (int ia = 0; ia < Alphas.Count && Inc.HayCajasPorEmpacar && (!Parar || TotalIter == 0); ++ia)
+            for (int ia = 0; ia < Alphas.Count && !Inc.Terminado && (!Parar || TotalIter == 0); ++ia)
             {
                 if (Iteracion(Alphas[ia])) break;
             }
 
             // Resto de la metaheurística: alpha reactivo
-            while (!Parar && Inc.HayCajasPorEmpacar)
+            while (!Parar && !Inc.Terminado)
             {
                 if (Iteracion(DeterminarAlpha())) break;
             }
@@ -192,21 +222,21 @@ namespace Cubicaje
             return Alphas[Alphas.Count - 1];
         }
 
-        /// <summary>Una iteración GRASP (+ beam search si aplica). Devuelve true si la incumbente ya está completa.</summary>
+        /// <summary>Una iteración GRASP (+ beam search si aplica). Devuelve true si la incumbente ya no se puede mejorar.</summary>
         bool Iteracion(Alpha a)
         {
             ++TotalIter;
             var C = new Container(C0, true);
             C.Alpha = a.Val;
             C.Constructivo();
-            a.Actualizar(C.Utilizacion);
+            a.Actualizar(C.Puntaje);
 
             double porcentaje = MaxTime > 0 ? 0.7 - 0.6 * Duracion / MaxTime : 0.7;
             bool bl = false;
-            if (C.Utilizacion > Inc.Utilizacion + Epsilon)
+            if (TotalIter == 1 || C.Puntaje > Inc.Puntaje + Epsilon)
             {
                 Inc = new Container(C, false);
-                if (!Inc.HayCajasPorEmpacar) return true;
+                if (Inc.Terminado) return true;
                 bl = true;
             }
 
@@ -221,33 +251,33 @@ namespace Cubicaje
                 C.RemoverPiezas(hasta);
                 BeamSearch(C);
             }
-            return !Inc.HayCajasPorEmpacar;
+            return Inc.Terminado;
         }
 
         /// <summary>Beam Search desde una solución parcial. Cada hijo se evalúa completándolo con ConstructivoFast.</summary>
         void BeamSearch(Container raiz)
         {
             var haz = new List<Container> { raiz };
-            while (haz.Count > 0 && !Parar && Inc.HayCajasPorEmpacar)
+            while (haz.Count > 0 && !Parar && !Inc.Terminado)
             {
                 var hijos = new List<Container>();
                 foreach (var c in haz)
                 {
-                    if (!Inc.HayCajasPorEmpacar) break;
+                    if (Inc.Terminado) break;
                     var opciones = c.ObtenerOpcionesBeam();
                     foreach (var o in opciones)
                     {
-                        if (!Inc.HayCajasPorEmpacar) break;
+                        if (Inc.Terminado) break;
                         var completo = new Container(o, true);
                         completo.ConstructivoFast();
-                        o.UtilizacionBW = completo.Utilizacion;
-                        if (completo.Utilizacion > Inc.Utilizacion) Inc = new Container(completo, false);
+                        o.PuntajeBW = completo.Puntaje;
+                        if (completo.Puntaje > Inc.Puntaje) Inc = new Container(completo, false);
                     }
                     hijos.AddRange(opciones);
                 }
 
-                if (!Inc.HayCajasPorEmpacar || hijos.Count == 0) break;
-                hijos = hijos.OrderByDescending(x => x.UtilizacionBW).ToList(); // list::sort estable
+                if (Inc.Terminado || hijos.Count == 0) break;
+                hijos = hijos.OrderByDescending(x => x.PuntajeBW).ToList(); // list::sort estable
                 if (hijos.Count > I.Par.BeamWidth) hijos.RemoveRange(I.Par.BeamWidth, hijos.Count - I.Par.BeamWidth);
                 haz = hijos;
             }
