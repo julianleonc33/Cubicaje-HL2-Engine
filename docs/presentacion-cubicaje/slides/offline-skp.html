@@ -1,0 +1,49 @@
+<section id="offline-skp" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">03</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Versión 1 · Offline · Un contenedor</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#2A78D6;background:#E1E8F0;padding:4px 14px;border-radius:50%">CubicajeSolver</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05">GRASP + Beam Search: construir, desarmar y completar</h2>
+<div style="display:flex;align-items:center;gap:0">
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #2A78D6;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#2A78D6">1 · Constructivo</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Elige un espacio (fondo-altura o altura-fondo) y un bloque de una lista restringida por α. Los α con mejor utilización se escogen más.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #2A78D6;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#2A78D6">2 · ¿Vale la pena?</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Pasa a búsqueda local si mejora la incumbente o si su métrica volumen / área de piso compite con ella (umbral que baja con el tiempo).</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #2A78D6;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#2A78D6">3 · Desarmar</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Se conservan los primeros bloques hasta el punto de corte y se reconstruyen espacios, cantidades y bloques disponibles (RemoverPiezas).</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #2A78D6;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#2A78D6">4 · Beam Search</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Cada nodo expande 3 espacios × 5 bloques; cada hijo se completa con un constructivo rápido determinístico y sobreviven los 5 mejores por nivel.</p>
+</div>
+</div>
+<div style="display:flex;gap:40px;align-items:start">
+<table style="flex:1;font-size:24px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:34%;text-align:left;padding:10px 18px">Parámetro</th><th style="width:16%;text-align:left">Valor</th><th style="width:50%;text-align:left">Significado</th></tr>
+<tr><td>BeamWidth</td><td>5</td><td>nodos que sobreviven por nivel del haz</td></tr>
+<tr><td>MaxNBloques</td><td>10</td><td>bloques generales por pieza</td></tr>
+<tr><td>UtilizacionMaximaBloque</td><td>0,99</td><td>llenado mínimo para fusionar bloques</td></tr>
+<tr><td>α</td><td>0,1 … 1,0</td><td>lista restringida; muestreo reactivo</td></tr>
+<tr><td>maxTiempoSeg</td><td>libre</td><td>presupuesto (3 s en las pruebas)</td></tr>
+</table>
+<div style="width:560px;background:#171A1F;border-radius:8px;padding:26px 32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#F2B01E;text-transform:uppercase;letter-spacing:2px">Criterio de parada</p>
+<ul style="font-size:24px;line-height:1.4;color:#F5F4F0;padding:0 0 0 28px">
+<li>Se agota maxTiempoSeg (revisado tras cada iteración y nivel del haz).</li>
+<li>La incumbente tiene <b>todas</b> las cajas.</li>
+<li>Cancelación desde Unity: devuelve la mejor solución hasta ese momento.</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">06</p>
+<aside>Es el algoritmo del C++ sin cambios de estructura. Fase 1: una iteración por cada alfa. Fase 2: alfa reactivo hasta agotar el tiempo. Siempre se completa al menos una iteración, aun con tiempo 0. El resultado es la incumbente: cajas colocadas en orden de empaque, no colocadas y utilización.</aside>
+</section>

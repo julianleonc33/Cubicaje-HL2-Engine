@@ -1,0 +1,20 @@
+<section id="supuestos" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">02</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Supuestos</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:72px;font-weight:600;line-height:1.05">Lo que las cuatro versiones dan por hecho</h2>
+<table style="font-size:26px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:24%;text-align:left;padding:14px 20px">Supuesto</th><th style="width:56%;text-align:left">Detalle</th><th style="width:20%;text-align:left">Aplica a</th></tr>
+<tr><td>Geometría</td><td>Cajas y contenedores ortogonales; unidades enteras (mm). Ejes del motor: X ancho, Y fondo, Z alto; Unity usa Y vertical y CubicajeEjes convierte.</td><td>Las cuatro</td></tr>
+<tr><td>Rotaciones</td><td>Las 6 orientaciones por defecto (RotX/RotY/RotZ = 3). «Este lado arriba» = solo giros sobre el eje vertical.</td><td>Las cuatro</td></tr>
+<tr><td>Estabilidad</td><td>Soporte parcial geométrico: el centro de la base de cada caja elevada queda dentro del casco convexo de sus áreas de contacto con las cajas de abajo. En el online se puede exigir soporte completo.</td><td>Las cuatro</td></tr>
+<tr><td>Sin masas ni presión</td><td>No hay pesos, límite de carga ni distribución de masas. La app no los entrega y con masa = 0 la lógica del C++ degeneraba.</td><td>Las cuatro</td></tr>
+<tr><td>Contenedores</td><td>Un solo tipo de contenedor; en bin packing todos son idénticos y, en principio, ilimitados.</td><td>BPP</td></tr>
+<tr><td>Información</td><td>Offline: todas las cajas conocidas, cantidades agrupadas por dimensiones. Online: se conoce la caja actual y, si acaso, un buffer de las próximas; nada se reubica.</td><td>Según versión</td></tr>
+<tr><td>Un solo destino</td><td>Sin multidrop: no hay orden de descarga por cliente ni restricciones de visibilidad.</td><td>Las cuatro</td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:1400px;font-size:24px;color:#7A7F88">Frente al C++: estabilidad geométrica a cualquier altura, todas las cajas de apoyo registradas y piezas idénticas agrupadas por tipo.</p>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">04</p>
+<aside>Supuestos. Lo más importante para la operación: no hay pesos. Si en el futuro se quiere restringir carga sobre cajas frágiles, hay que agregar masa y presión máxima por tipo; el C++ tenía esa lógica pero no funcionaba sin masas.</aside>
+</section>

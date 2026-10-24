@@ -1,0 +1,29 @@
+<section id="validacion" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">04</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Validación</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05">Paridad con el C++ original y soluciones verificadas aparte</h2>
+<table style="font-size:24px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:34%;text-align:left;padding:10px 18px">Prueba</th><th style="width:40%;text-align:left">Resultado</th><th style="width:26%;text-align:left">Lectura</th></tr>
+<tr><td>Caso 205³ de la DLL (12 cajas)</td><td>C++ (MSVC) y C#: 11/12 cajas, 84,13 % a 3 s y a 15 s</td><td>paridad; el C# itera ≈ 25× más rápido</td></tr>
+<tr><td>Determinismo</td><td>misma semilla → misma solución</td><td>reproducible para depurar</td></tr>
+<tr><td>Offline SKP aleatorio (8 instancias, 0,5 s)</td><td>5 a 30 cajas, todas las soluciones válidas</td><td>si todo cabe, termina en 1 iteración</td></tr>
+<tr><td>Online SKP aleatorio (20 instancias)</td><td>utilización media 52 % sin lookahead, 54 % con 4</td><td>el lookahead ayuda poco</td></tr>
+<tr><td>Bin packing offline, óptimos conocidos</td><td>8, 10, 20 cubos de 50 y 27 de 33 en 100³ → 1, 2, 3 y 1</td><td>alcanza la cota en los cuatro</td></tr>
+<tr><td>Bin packing offline aleatorio (6 instancias, 2 s)</td><td>10 contenedores en total, cota inferior 8</td><td>a 1 de la cota en 2 de 6 casos</td></tr>
+<tr><td>Bin packing online (10 instancias)</td><td>24 contenedores, cota 16; límite de abiertos respetado</td><td>el precio de no ver el futuro</td></tr>
+</table>
+<div style="display:flex;gap:40px;align-items:start">
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C;text-transform:uppercase;letter-spacing:2px">Comprobador independiente</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Fuerza bruta aparte del motor: contención, no solapamiento, soporte parcial de toda caja elevada, orientaciones permitidas, uso único de cada pieza y contenedores ≥ cota inferior.</p>
+</div>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C;text-transform:uppercase;letter-spacing:2px">Compilación</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">C# 7.3 (Unity 2019+), sin paquetes. Runtime/ compila también con UNITY_5_3_OR_NEWER contra un stub de UnityEngine. Pruebas: Pruebas/compilar_y_probar.cmd o el .csproj con dotnet.</p>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">13</p>
+<aside>El dato clave es la primera fila: el C++ compilado en esta máquina da exactamente el mismo 11 de 12 y 84,13 por ciento. El 12 de 12 que mencionaba el README original no lo alcanza ninguno de los dos motores. Caso 205 cúbico: 6 cajas de 40×80×165 y 6 de 80×80×120.</aside>
+</section>

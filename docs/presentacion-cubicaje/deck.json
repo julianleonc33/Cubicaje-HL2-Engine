@@ -1,0 +1,67 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-24T20:30:00Z"
+  },
+  "lists": "css",
+  "title": "Cubicaje HoloLens 2 · Motor de optimización",
+  "order": [
+    "cover",
+    "contexto",
+    "versiones",
+    "supuestos",
+    "mecanismo",
+    "offline-skp",
+    "offline-bpp",
+    "online-skp",
+    "online-bpp",
+    "parada",
+    "parada-online",
+    "flujo",
+    "validacion",
+    "limites",
+    "api"
+  ],
+  "sections": {
+    "s0": {
+      "description": "Portada: el motor de cubicaje en C# para HoloLens 2.",
+      "start": "cover"
+    },
+    "s1": {
+      "description": "El problema: qué se tradujo, qué se agregó y las cuatro versiones del problema.",
+      "start": "contexto"
+    },
+    "s2": {
+      "description": "Supuestos comunes y el mecanismo base de espacios maximales y bloques.",
+      "start": "supuestos"
+    },
+    "s3": {
+      "description": "Las cuatro versiones una a una: mecanismo, parámetros y criterio de parada.",
+      "start": "offline-skp"
+    },
+    "s4": {
+      "description": "Criterios de parada, flujo de trabajo propuesto en HoloLens y validación.",
+      "start": "parada"
+    },
+    "s5": {
+      "description": "Limitaciones, siguientes pasos y resumen de la API.",
+      "start": "limites"
+    }
+  },
+  "faces": {
+    "barlow": {
+      "family": "Barlow",
+      "href": "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&display=swap"
+    },
+    "barlow-condensed": {
+      "family": "Barlow Condensed",
+      "href": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap"
+    },
+    "jetbrains-mono": {
+      "family": "JetBrains Mono",
+      "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+    }
+  },
+  "designSystems": []
+}

@@ -1,0 +1,29 @@
+<section id="limites" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">05</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Limitaciones y siguientes pasos</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:72px;font-weight:600;line-height:1.05">Qué falta por decidir, medir y construir</h2>
+<div style="display:flex;gap:48px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C;text-transform:uppercase;letter-spacing:2px">Limitaciones conocidas</p>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:6px"><h3 style="font-size:28px;font-weight:600">Sin pesos ni carga máxima</h3><p style="font-size:25px;line-height:1.35;color:#464B54">La estabilidad es geométrica. Cajas frágiles o pesadas arriba no se penalizan.</p></div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:6px"><h3 style="font-size:28px;font-weight:600">Cota inferior débil en bin packing</h3><p style="font-size:25px;line-height:1.35;color:#464B54">Solo por volumen: con cajas grandes el solver agota el tiempo aunque ya tenga el óptimo.</p></div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:6px"><h3 style="font-size:28px;font-weight:600">Online sin re-sincronización</h3><p style="font-size:25px;line-height:1.35;color:#464B54">Si el operario pone una caja fuera de la posición sugerida, hoy hay que reiniciar el contenedor.</p></div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:6px"><h3 style="font-size:28px;font-weight:600">Rendimiento en ARM64 sin medir</h3><p style="font-size:25px;line-height:1.35;color:#464B54">Las cifras son de PC x64. El beam copia soluciones completas; en el HoloLens habrá menos iteraciones por segundo.</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#2E4A6B;text-transform:uppercase;letter-spacing:2px">Siguientes pasos propuestos</p>
+<ol style="font-size:26px;line-height:1.45;color:#171A1F;padding:0 0 0 36px">
+<li>Revisar y fusionar el pull request #1 (rama csharp-port) e integrar Runtime/ en el proyecto de Unity en lugar del P/Invoke.</li>
+<li>Medir en el HoloLens 2: iteraciones por segundo y tiempo por caja; fijar maxTiempoSeg y K para el dispositivo.</li>
+<li>Calibrar en piso la política de cierre online: d_min, R rechazos consecutivos y umbral U.</li>
+<li>Agregar al online una operación «fijar caja colocada a mano» para re-sincronizar sin reiniciar.</li>
+<li>Reforzar la cota inferior del bin packing (cotas de Martello y Vigo) para terminar antes.</li>
+<li>Si la operación lo exige: masa y carga máxima por tipo de caja, y orden de descarga por destino (multidrop).</li>
+</ol>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">14</p>
+<aside>Las limitaciones 1 y 6 son decisiones de alcance heredadas del uso que hacía la app de la DLL; las demás son trabajo pendiente concreto. El orden de los pasos es el propuesto para las próximas semanas.</aside>
+</section>

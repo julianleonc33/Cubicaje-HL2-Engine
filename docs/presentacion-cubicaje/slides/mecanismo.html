@@ -1,0 +1,56 @@
+<section id="mecanismo" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">02</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Mecanismo base</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05">Espacios maximales y bloques: la representación común a las cuatro</h2>
+<div style="display:flex;gap:56px;flex:1">
+<div style="width:700px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px">
+<p style="font-size:24px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Planta (X · Y)</p>
+<div style="position:relative;height:300px;background:#FDFCFA;border:2px solid #464B54;border-radius:4px">
+<div style="position:absolute;left:0;bottom:0;width:140px;height:120px;background:#2E4A6B"></div>
+<div style="position:absolute;left:140px;bottom:0;width:194px;height:120px;background:#E1E8F0;border:1px dashed #5C7EA6"></div>
+<div style="position:absolute;left:0;top:0;width:334px;height:180px;background:#F6E6DD;border:1px dashed #A8431C"></div>
+<p style="position:absolute;left:14px;bottom:40px;width:120px;font-size:24px;color:#F5F4F0;font-weight:600">bloque</p>
+<p style="position:absolute;left:160px;bottom:40px;width:170px;font-size:24px;color:#2E4A6B">espacio en +X</p>
+<p style="position:absolute;left:14px;top:60px;width:310px;font-size:24px;color:#A8431C">espacio en +Y (huella completa)</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px">
+<p style="font-size:24px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Alzado (X · Z)</p>
+<div style="position:relative;height:300px;background:#FDFCFA;border:2px solid #464B54;border-radius:4px">
+<div style="position:absolute;left:0;bottom:0;width:140px;height:140px;background:#2E4A6B"></div>
+<div style="position:absolute;left:0;top:0;width:334px;height:160px;background:#FBF1D6;border:1px dashed #EDA100"></div>
+<div style="position:absolute;left:140px;bottom:0;width:194px;height:140px;background:#E1E8F0;border:1px dashed #5C7EA6"></div>
+<p style="position:absolute;left:14px;bottom:50px;width:120px;font-size:24px;color:#F5F4F0;font-weight:600">bloque</p>
+<p style="position:absolute;left:14px;top:50px;width:310px;font-size:24px;color:#8A6400">espacio sobre el bloque (z1 = techo)</p>
+<p style="position:absolute;left:160px;bottom:50px;width:170px;font-size:24px;color:#2E4A6B">espacio en +X</p>
+</div>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Al colocar un bloque, cada espacio que lo intersecta se parte en hasta seis sub-espacios (−X, +X, −Y, +Y, abajo, arriba). Con soporte parcial el espacio superior conserva la huella del espacio original; en la lista «rápida» se limita a la huella del bloque.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px;border-left:6px solid #2E4A6B;padding:4px 0 4px 24px">
+<h3 style="font-size:28px;font-weight:600">Espacio maximal</h3>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Paralelepípedo libre máximo. Tras cada colocación se eliminan los espacios contenidos en otros, los que no admiten ninguna caja pendiente y los elevados sin apoyo. Cada uno recuerda qué cajas lo soportan.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;border-left:6px solid #A8431C;padding:4px 0 4px 24px">
+<h3 style="font-size:28px;font-weight:600">Bloque</h3>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Una caja en una orientación, o la unión de dos bloques lado a lado o apilados que llena al menos el 99 % de su envolvente. Hasta 10 bloques por pieza (MaxNBloques).</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;border-left:6px solid #EDA100;padding:4px 0 4px 24px">
+<h3 style="font-size:28px;font-weight:600">Esquina y soporte</h3>
+<p style="font-size:24px;line-height:1.35;color:#464B54">El bloque va a una de las 4 esquinas inferiores del espacio, elegida por el centroide de las áreas de apoyo. Toda caja elevada tiene el centro de su base dentro del casco convexo de sus contactos.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;border-left:6px solid #5C7EA6;padding:4px 0 4px 24px">
+<h3 style="font-size:28px;font-weight:600">Mejor ajuste (best-fit)</h3>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Los tres sobrantes del espacio menos el bloque, ordenados de menor a mayor (bf1 ≤ bf2 ≤ bf3): el criterio para ordenar bloques en todas las versiones.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">05</p>
+<aside>Mecanismo base, idéntico al C++. En bin packing cada espacio y cada caja llevan además el índice de su contenedor; partir, contener y soportar solo relacionan elementos del mismo contenedor.</aside>
+</section>
