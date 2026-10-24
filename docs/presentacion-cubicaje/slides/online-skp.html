@@ -1,0 +1,48 @@
+<section id="online-skp" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">03</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Versión 3 · Online · Un contenedor</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#4A3AA7;background:#E6E1F5;padding:4px 14px;border-radius:50%">CubicajeOnline</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05">Una decisión por caja: candidatos, orden y lookahead</h2>
+<div style="display:flex;align-items:center;gap:0">
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #4A3AA7;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#4A3AA7">1 · Candidatos</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Para cada espacio maximal y orientación permitida que cabe: la caja va a la esquina del espacio y, si está elevada, debe pasar el soporte.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #4A3AA7;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#4A3AA7">2 · Orden</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Los candidatos se ordenan con la estrategia elegida (tabla). Sin lookahead se toma el primero: la decisión es inmediata.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #4A3AA7;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#4A3AA7">3 · Lookahead (opcional)</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Con un buffer de próximas cajas: se prueban los K mejores candidatos completando el buffer con la misma regla; gana el que carga más volumen.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #4A3AA7;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#4A3AA7">4 · Colocar o rechazar</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Se ubica la caja y se actualizan los espacios. Si no hay candidatos se rechaza, el estado no cambia y las siguientes se siguen intentando.</p>
+</div>
+</div>
+<div style="display:flex;gap:40px;align-items:start">
+<table style="flex:1;font-size:24px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:30%;text-align:left;padding:10px 18px">Estrategia</th><th style="width:36%;text-align:left">Orden de los candidatos</th><th style="width:34%;text-align:left">Cuándo conviene</th></tr>
+<tr><td>MenorAlturaMejorAjuste</td><td>más bajo · mejor ajuste · más al fondo</td><td>defecto; pallets abiertos, capas estables</td></tr>
+<tr><td>FondoAlturaMejorAjuste</td><td>más al fondo · más alto · mejor ajuste</td><td>contenedores que se llenan desde el fondo</td></tr>
+<tr><td>MejorAjuste</td><td>menor sobrante · más bajo · más al fondo</td><td>cajas muy heterogéneas, aprovechar huecos</td></tr>
+</table>
+<div style="width:600px;display:flex;flex-direction:column;gap:14px">
+<table style="font-size:24px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:50%;text-align:left;padding:10px 18px">Parámetro</th><th style="width:50%;text-align:left">Valor por defecto</th></tr>
+<tr><td>CandidatosEvaluados (K)</td><td>5</td></tr>
+<tr><td>SoporteCompleto</td><td>false (soporte parcial)</td></tr>
+<tr><td>Buffer de próximas cajas</td><td>ninguno; en pruebas 3–4</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Caso 205³, 12 cajas en orden aleatorio: 10–11 de 12 sin lookahead según la estrategia; 11 de 12 con lookahead 3 (el offline llega a 11 de 12).</p>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">08</p>
+<aside>El online no tiene ciclo de búsqueda: por cada caja hace un cálculo acotado y devuelve la posición. Lo que sí hay que definir es cuándo se da por terminado el contenedor; eso va en las láminas de criterios de parada.</aside>
+</section>

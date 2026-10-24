@@ -1,0 +1,17 @@
+<section id="parada" data-transition="fade" style="background:#171A1F;color:#F5F4F0;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#F2B01E">04</p>
+<p style="font-size:28px;color:#B9B5AA;text-transform:uppercase;letter-spacing:2px">Criterios de parada</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05;color:#F5F4F0">Offline: parada por tiempo u óptimo. Online: fin por eventos</h2>
+<table style="font-size:24px;color:#F5F4F0;background:#22262D;border:1px solid #464B54">
+<tr style="background:#2E333B"><th style="width:16%;text-align:left;padding:10px 18px">Versión</th><th style="width:30%;text-align:left">Qué detiene el cómputo</th><th style="width:34%;text-align:left">Qué termina el episodio / cierra el contenedor</th><th style="width:20%;text-align:left">Costo por decisión</th></tr>
+<tr><td>1 · Offline SKP</td><td>maxTiempoSeg · todas las cajas colocadas · cancelación</td><td>Una sola corrida: la solución es el plan completo del contenedor.</td><td>14.000 iteraciones/s en x64 con 12 cajas</td></tr>
+<tr><td>2 · Offline BPP</td><td>maxTiempoSeg · N = cota inferior ⌈ΣV / Vc⌉ · cancelación</td><td>Una sola corrida: plan de todos los contenedores.</td><td>igual; crece con el número de cajas</td></tr>
+<tr><td>3 · Online SKP</td><td>Sin ciclo: por caja, un cálculo acotado (espacios × 6 orientaciones, más K × buffer con lookahead).</td><td>Se acaba la cola, o el operador cierra el contenedor según la política de la lámina siguiente. Un rechazo no cierra.</td><td>menos de 1 ms por caja en x64 (20 instancias: 0,67 s en total)</td></tr>
+<tr><td>4 · Online BPP</td><td>Igual que la 3; nunca rechaza una caja que cabe en un contenedor vacío.</td><td>Se acaba la cola. Un contenedor se cierra al exceder MaxContenedoresAbiertos (el más lleno) o con Cerrar(k) al despachar.</td><td>igual que la 3, sobre la lista de todos los abiertos</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.4;color:#D9D7CF">En las versiones offline el criterio de parada es del <b>algoritmo</b>: cuándo dejar de buscar. En las online no hay búsqueda que detener: la pregunta pasa a ser cuándo dar por <b>cerrado el contenedor</b>.</p>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#B9B5AA">10</p>
+<aside>Respuesta directa a la duda sobre el online: no hay criterio de parada del algoritmo porque no hay iteraciones; cada caja es una decisión cerrada en milisegundos. Lo que hay que fijar es la política de cierre del contenedor, en la lámina siguiente.</aside>
+</section>

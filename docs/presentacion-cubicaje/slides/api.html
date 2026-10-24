@@ -1,0 +1,19 @@
+<section id="api" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">05</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Anexo · API para Unity</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:72px;font-weight:600;line-height:1.05">Seis archivos en Runtime/, sin dependencias</h2>
+<table style="font-size:24px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:14%;text-align:left;padding:10px 16px">Versión</th><th style="width:34%;text-align:left">Llamada</th><th style="width:34%;text-align:left">Devuelve</th><th style="width:18%;text-align:left">Archivo</th></tr>
+<tr><td>1 · Offline SKP</td><td>CubicajeSolver.Resolver(cx, cy, cz, piezas, maxTiempoSeg, ParametrosSolver, token)</td><td>ResultadoCubicaje: Colocadas en orden de empaque, NoColocadas, Utilizacion, Iteraciones</td><td>CubicajeSolver.cs</td></tr>
+<tr><td>2 · Offline BPP</td><td>BinPackingSolver.Resolver(cx, cy, cz, piezas, maxTiempoSeg, ParametrosSolver, token)</td><td>ResultadoBinPacking: un ResultadoCubicaje por contenedor, CotaInferior, NoColocadas</td><td>CubicajeBinPacking.cs</td></tr>
+<tr><td>3 · Online SKP</td><td>new CubicajeOnline(cx, cy, cz, ParametrosOnline); Colocar(pieza[, proximas]); Cabe(pieza); EspaciosLibres(); Reiniciar()</td><td>PiezaColocada? (null = no cabe), Colocadas, Utilizacion, PiezasRechazadas</td><td>CubicajeOnline.cs</td></tr>
+<tr><td>4 · Online BPP</td><td>new BinPackingOnline(cx, cy, cz, ParametrosBinPackingOnline); Colocar(pieza[, proximas]); Cerrar(k); EspaciosLibres(k)</td><td>PiezaColocada? con Contenedor; NumContenedores, NumAbiertos, ColocadasDe(k), UtilizacionDe(k)</td><td>CubicajeBinPacking.cs</td></tr>
+<tr><td>Unity</td><td>CubicajeEjes.PiezaDesdeUnity, CentroLocalEnUnity, TamanoEnUnity; CubicajeSolverBehaviour.Resolver(piezas), AlTerminar, Cancelar()</td><td>conversión Y vertical de Unity ↔ Z vertical del motor; solver en un hilo aparte con aviso en el hilo principal</td><td>CubicajeUnity.cs</td></tr>
+<tr><td>Común</td><td>PiezaEntrada(id, dimX, dimY, dimZ[, mantenerVertical]); PiezaColocada; ParametrosSolver; núcleo geométrico</td><td>tipos de entrada y salida; espacios maximales, bloques, estabilidad</td><td>CubicajeTipos.cs, CubicajeNucleo.cs, CubicajeGeometria.cs</td></tr>
+</table>
+<p style="font-size:25px;line-height:1.4;color:#464B54">Todas las llamadas son reentrantes (sin estado global, a diferencia de la DLL) y admiten un token de cancelación que devuelve la mejor solución hasta ese momento. Documentación completa en CubicajeCSharp/README.md.</p>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">15</p>
+<aside>Lámina de referencia para los desarrolladores. La correspondencia con las funciones del C++ está en el README de la carpeta.</aside>
+</section>

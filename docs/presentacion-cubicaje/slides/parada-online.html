@@ -1,0 +1,29 @@
+<section id="parada-online" data-transition="fade" style="background:#171A1F;color:#F5F4F0;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#F2B01E">04</p>
+<p style="font-size:28px;color:#B9B5AA;text-transform:uppercase;letter-spacing:2px">Criterios de parada · online</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05;color:#F5F4F0">Online: la pregunta no es cuándo parar, sino cuándo cerrar</h2>
+<div style="display:flex;gap:28px;align-items:start">
+<div style="flex:1;background:#2E333B;border-left:6px solid #F2B01E;border-radius:0 8px 8px 0;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#F2B01E;text-transform:uppercase;letter-spacing:2px">Propuesta: política de cierre del contenedor (a calibrar)</p>
+<ul style="font-size:25px;line-height:1.4;color:#F5F4F0;padding:0 0 0 28px">
+<li><b>Sin espacio útil:</b> ningún espacio libre (EspaciosLibres) admite la caja más pequeña esperada, d_min. Criterio físico: el contenedor está lleno para lo que puede llegar.</li>
+<li><b>Rechazos consecutivos:</b> R cajas seguidas rechazadas (propuesta R = 2) cierran el contenedor y abren el siguiente.</li>
+<li><b>Umbral de utilización:</b> utilización ≥ U (propuesta 85 %) y cola restante pequeña: se despacha sin esperar.</li>
+<li><b>Orden del operador:</b> cierre manual desde HoloLens (pallet completo, cambio de destino).</li>
+</ul>
+</div>
+<div style="width:560px;background:#2E333B;border-left:6px solid #5C7EA6;border-radius:0 8px 8px 0;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FB1D9;text-transform:uppercase;letter-spacing:2px">Qué está implementado</p>
+<ul style="font-size:25px;line-height:1.4;color:#F5F4F0;padding:0 0 0 28px">
+<li>Rechazo por caja, consulta Cabe() sin modificar el estado y EspaciosLibres() para evaluar d_min desde la app.</li>
+<li>Cierre por límite de abiertos y Cerrar(k) manual en la versión 4.</li>
+<li>Los criterios R y U son reglas de la app sobre esas consultas: no tocan el motor.</li>
+</ul>
+</div>
+</div>
+<p style="font-size:28px;line-height:1.4;color:#D9D7CF">Las cuatro reglas se combinan con «o»: la primera que se cumpla cierra el contenedor. Los parámetros d_min, R y U se fijan en piso con las primeras corridas reales.</p>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#B9B5AA">11</p>
+<aside>Proponemos cuatro reglas combinables con parámetros d_min, R y U que se calibran en piso. Las primitivas ya están en la API; R y U se implementan en la app sin tocar el motor. En bin packing online existe además el cierre por límite de abiertos y Cerrar(k).</aside>
+</section>

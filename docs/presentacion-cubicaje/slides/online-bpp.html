@@ -1,0 +1,44 @@
+<section id="online-bpp" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">03</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Versión 4 · Online · Varios contenedores</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8A6400;background:#FBF1D6;padding:4px 14px;border-radius:50%">BinPackingOnline</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05">La caja busca espacio en todos los contenedores abiertos</h2>
+<div style="display:flex;align-items:center;gap:0">
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #EDA100;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8A6400">1 · Candidatos</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Igual que la versión 3, pero sobre la lista de espacios de <b>todos</b> los contenedores abiertos. Cada candidato sabe a qué contenedor pertenece.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #EDA100;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8A6400">2 · Orden</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Primero el contenedor: el más lleno donde cabe (MejorAjuste) o el más antiguo (PrimerAjuste); dentro de él, la posición como en la versión 3.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #EDA100;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8A6400">3 · Sin candidatos: abrir</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Se abre un contenedor y su espacio completo entra a la lista. Con límite de abiertos, antes se cierra el más lleno: sus espacios salen de la lista.</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#464B54">→</p>
+<div style="flex:1;background:#FDFCFA;border:1px solid #D9D7CF;border-top:8px solid #EDA100;border-radius:8px;padding:20px 24px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8A6400">4 · Lookahead y colocación</p>
+<p style="font-size:24px;line-height:1.35;color:#464B54">El rollout también abre contenedores; gana el candidato con mejor −N + Σu²/N (menos contenedores, más llenos). Solo se rechaza lo que no cabe en uno vacío.</p>
+</div>
+</div>
+<div style="display:flex;gap:40px;align-items:start">
+<table style="flex:1;font-size:24px;color:#171A1F;background:#FDFCFA;border:1px solid #D9D7CF">
+<tr style="background:#ECEAE3"><th style="width:34%;text-align:left;padding:10px 18px">Parámetro</th><th style="width:22%;text-align:left">Defecto</th><th style="width:44%;text-align:left">Efecto</th></tr>
+<tr><td>Estrategia</td><td>MejorAjuste</td><td>completa contenedores y los cierra antes</td></tr>
+<tr><td>MaxContenedoresAbiertos</td><td>0 = sin límite</td><td>espacio físico (p. ej. 2 pallets en el muelle)</td></tr>
+<tr><td>Colocacion</td><td>versión 3</td><td>estrategia de posición, K, tipo de soporte</td></tr>
+<tr><td>Cerrar(k)</td><td>manual</td><td>el pallet salió: no recibe más cajas</td></tr>
+</table>
+<div style="width:600px;background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:22px 28px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8A6400;text-transform:uppercase;letter-spacing:2px">Resultado de referencia</p>
+<p style="font-size:24px;line-height:1.4;color:#464B54">10 instancias aleatorias de 20 a 80 cajas: 24 contenedores (mejor ajuste con lookahead 3, y también primer ajuste) frente a una cota por volumen de 16. El offline, con 2 s por instancia, queda a 1 contenedor de la cota en promedio.</p>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">09</p>
+<aside>Diferencia clave con la versión 3: aquí no se rechaza (se abre contenedor). Por eso el concepto de parada cambia: no es cuándo se llena el contenedor, sino cuándo se cierra uno para despacharlo. Siguientes láminas.</aside>
+</section>

@@ -1,0 +1,59 @@
+<section id="offline-bpp" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">03</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">Versión 2 · Offline · Varios contenedores</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C;background:#F6E6DD;padding:4px 14px;border-radius:50%">BinPackingSolver</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:600;line-height:1.05">Una sola lista de espacios para todos los contenedores</h2>
+<div style="display:flex;gap:48px;align-items:start">
+<div style="width:820px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:center;gap:0">
+<div style="flex:1;background:#FDFCFA;border:2px solid #464B54;border-radius:6px;padding:14px 18px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#464B54">contenedor 0</p>
+<div style="display:flex;gap:6px"><div style="flex:3;height:40px;background:#2E4A6B;border-radius:3px"></div><div style="flex:1;height:40px;background:#E1E8F0;border:1px dashed #5C7EA6;border-radius:3px"></div></div>
+<p style="font-size:24px;color:#464B54">lleno · 1 espacio</p>
+</div>
+<p style="width:40px;text-align:center;font-size:28px;line-height:1;color:#B9B5AA">·</p>
+<div style="flex:1;background:#FDFCFA;border:2px solid #464B54;border-radius:6px;padding:14px 18px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#464B54">contenedor 1</p>
+<div style="display:flex;gap:6px"><div style="flex:2;height:40px;background:#2E4A6B;border-radius:3px"></div><div style="flex:1;height:40px;background:#E1E8F0;border:1px dashed #5C7EA6;border-radius:3px"></div><div style="flex:1;height:40px;background:#E1E8F0;border:1px dashed #5C7EA6;border-radius:3px"></div></div>
+<p style="font-size:24px;color:#464B54">en carga · 2 espacios</p>
+</div>
+<p style="width:48px;text-align:center;font-size:32px;line-height:1;color:#A8431C">→</p>
+<div style="flex:1;background:#F6E6DD;border:2px dashed #A8431C;border-radius:6px;padding:14px 18px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C">contenedor 2</p>
+<div style="display:flex;gap:6px"><div style="flex:1;height:40px;background:#FDFCFA;border:1px dashed #A8431C;border-radius:3px"></div></div>
+<p style="font-size:24px;color:#A8431C">se abre · entra a la lista</p>
+</div>
+</div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C;text-transform:uppercase;letter-spacing:2px">Regla de apertura</p>
+<p style="font-size:24px;line-height:1.4;color:#464B54">La lista reúne los espacios de todos los contenedores abiertos. Cuando ninguna caja pendiente tiene espacio en la lista, se abre un contenedor nuevo. En un contenedor vacío siempre cabe algún bloque, así que el constructivo termina con todas las cajas empacadas.</p>
+</div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:20px 26px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#A8431C;text-transform:uppercase;letter-spacing:2px">Puntaje a maximizar</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#171A1F">puntaje = −N + ( Σ utilización² ) / N</p>
+<p style="font-size:24px;line-height:1.4;color:#464B54">El segundo término está en (0, 1]: primero manda el número de contenedores N; a igualdad gana la solución más concentrada, la que más fácil permite eliminar uno.</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px;border-left:6px solid #EB6834;padding:4px 0 4px 24px">
+<h3 style="font-size:28px;font-weight:600">Qué cambia en el núcleo</h3>
+<p style="font-size:24px;line-height:1.35;color:#464B54">Espacios, bloques ubicados y cajas llevan el índice de contenedor. Partir, contener y calcular apoyos solo relacionan elementos del mismo contenedor. Se prioriza el contenedor de menor índice: se llenan en orden.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;border-left:6px solid #EB6834;padding:4px 0 4px 24px">
+<h3 style="font-size:28px;font-weight:600">Qué no cambia</h3>
+<p style="font-size:24px;line-height:1.35;color:#464B54">El mismo GRASP + Beam Search de la versión 1. Al desarmar una solución se reconstruyen los espacios de cada contenedor y se descartan los vacíos. El beam también abre contenedores cuando un nodo se queda sin espacios.</p>
+</div>
+<div style="background:#171A1F;border-radius:8px;padding:24px 30px;display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#F2B01E;text-transform:uppercase;letter-spacing:2px">Criterio de parada</p>
+<ul style="font-size:24px;line-height:1.4;color:#F5F4F0;padding:0 0 0 28px">
+<li>N alcanza la cota inferior por volumen ⌈ Σ volumen cajas / volumen contenedor ⌉: óptimo demostrado.</li>
+<li>Se agota maxTiempoSeg o llega la cancelación: se devuelve la mejor solución (menos contenedores, luego más concentrada).</li>
+</ul>
+</div>
+</div>
+</div>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">07</p>
+<aside>La cota inferior por volumen es débil cuando las cajas son grandes respecto al contenedor; en esos casos el solver corre hasta agotar el tiempo aunque ya tenga el óptimo. Se puede reforzar con cotas de Martello y Vigo si hace falta.</aside>
+</section>

@@ -1,0 +1,35 @@
+<section id="contexto" data-transition="fade" style="background:#F5F4F0;color:#171A1F;font-family:'Barlow', 'Segoe UI', sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;align-items:baseline;gap:24px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:28px;color:#A8431C">01</p>
+<p style="font-size:28px;color:#7A7F88;text-transform:uppercase;letter-spacing:2px">El problema</p>
+</div>
+<h2 style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:72px;font-weight:600;line-height:1.05">De una DLL nativa a scripts de Unity, y de un problema a cuatro</h2>
+<div style="display:flex;gap:48px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<p style="font-size:30px;line-height:1.4;color:#464B54"><b style="color:#171A1F">Punto de partida.</b> El motor C++ Intento14 resuelve la carga de <b>un</b> contenedor con todas las cajas conocidas (GRASP + Beam Search). La app de HoloLens lo llamaba por P/Invoke a una DLL ARM64, no reentrante y sin posibilidad de intervenir el algoritmo desde Unity.</p>
+<p style="font-size:30px;line-height:1.4;color:#464B54"><b style="color:#171A1F">Lo que hicimos.</b> Traducimos el motor a C# puro (sin DLL), conservando el algoritmo y sus parámetros, y lo extendimos a las variantes <b>online</b> (las cajas llegan una a una) y de <b>bin packing</b> (varios contenedores idénticos, minimizar cuántos se usan).</p>
+<p style="font-size:30px;line-height:1.4;color:#464B54"><b style="color:#171A1F">Lo que no se portó.</b> Multidrop (varios clientes), carga máxima por presión, distribución de masas y los modos de juntar espacios: la app no entrega masas ni clientes y la DLL tampoco los usaba.</p>
+</div>
+<div style="width:620px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:700;color:#A8431C;line-height:1">2.997</p>
+<p style="font-size:24px;color:#464B54;line-height:1.3">líneas de C# en 6 archivos de Runtime/ (el motor C++ tenía 6.985)</p>
+</div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:700;color:#A8431C;line-height:1">4</p>
+<p style="font-size:24px;color:#464B54;line-height:1.3">versiones: un contenedor y bin packing, cada una offline y online</p>
+</div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:700;color:#2E4A6B;line-height:1">≈ 25×</p>
+<p style="font-size:24px;color:#464B54;line-height:1.3">más iteraciones por segundo que el C++ en x64 (14.000 frente a 550–900)</p>
+</div>
+<div style="background:#FDFCFA;border:1px solid #D9D7CF;border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'Barlow Condensed', 'Arial Narrow', sans-serif;font-size:64px;font-weight:700;color:#2E4A6B;line-height:1">84,13 %</p>
+<p style="font-size:24px;color:#464B54;line-height:1.3">utilización en el caso de prueba de la DLL (11 de 12 cajas), igual en C++ y en C#</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1400px;font-size:24px;color:#7A7F88">Repositorio julianleonc33/Cubicaje-HL2-Engine · carpeta CubicajeCSharp/ · pruebas en Pruebas/compilar_y_probar.cmd</p>
+<p style="position:absolute;right:128px;bottom:64px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#7A7F88">02</p>
+<aside>Contexto. El C++ sigue en el repo y se puede compilar con MSVC; se usó para comparar. El caso 205 cúbico es el mismo de la prueba -testCApi de la DLL. Las 2.997 líneas incluyen el online y el bin packing; las pruebas son 375 líneas aparte.</aside>
+</section>
