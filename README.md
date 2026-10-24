@@ -8,6 +8,7 @@ Motor de cubicaje (GRASP + Beam Search, C++) usado por la aplicación CubicajeHL
 |---|---|
 | `Intento14/` | Motor original, sin modificar. Lee instancias desde `Instances/` y escribe resultados en `Solutions/`. |
 | `Intento14 modificado/` | Mismo motor, adaptado para integrarse con Unity (ver abajo). |
+| `CubicajeCSharp/` | Traducción del motor a C# (GRASP + Beam Search) como scripts de Unity, sin DLL, más una versión **online** del problema. Ver `CubicajeCSharp/README.md`. |
 
 ### Cambios en `Intento14 modificado/`
 
