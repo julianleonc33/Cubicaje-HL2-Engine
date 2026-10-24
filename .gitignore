@@ -16,3 +16,4 @@ Generated Files/
 *.obj
 *.lib
 *.exp
+bin/
